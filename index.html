@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Display Bitmapping Tool</title>
+  <style>
+    /* Colors */
+    :root {
+      --primary-color: #ff9900;  /* Orange */
+      --secondary-color: #005f99; /* Deep Blue */
+      --light-bg: #fef4e8;        /* Light Cream */
+      
+      --dark-bg: #003f5c;         /* Dark Blue */
+      --text-color: #fff;
+      --text-color-2: #000;
+    }
+
+    /* Basic Reset */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--light-bg);
+      color: var(--text-color-2);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header Styles */
+    .main-header {
+      background: var(--secondary-color);
+      color: var(--text-color);
+      padding: 0.5em 1em;
+    }
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-content .logo {
+      height: 40px;
+    }
+    .main-nav a {
+      color: var(--text-color);
+      margin-left: 1em;
+      text-decoration: none;
+    }
+    .hamburger {
+      background: transparent;
+      border: none;
+      color: var(--text-color);
+      font-size: 1.5em;
+      display: none;
+    }
+
+    /* Footer Styles */
+    .main-footer {
+      background: var(--secondary-color);
+      color: var(--text-color);
+      text-align: center;
+      padding: 0.5em;
+    }
+
+    /* Main Content Layout */
+    .main-content {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+    .container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    .canvas-container {
+      flex: 2;
+      position: relative;
+      background: #fff;
+      border: 1px solid var(--secondary-color);
+      overflow: auto;
+    }
+    #gridCanvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+    .controls-container {
+      flex: 1;
+      background: var(--dark-bg);
+      color: var(--text-color);
+      padding: 1em;
+      overflow-y: auto;
+    }
+
+    /* Collapsible Tool Sections */
+    .tool-section {
+      margin-bottom: 1em;
+    }
+    .tool-section summary {
+      font-size: 1rem;
+      font-weight: bold;
+      color: var(--secondary-color);
+      padding: 0.5em;
+      border: 2px solid var(--primary-color);
+      border-radius: 5px;
+      cursor: pointer;
+      background: var(--light-bg);
+      margin-bottom: 0.5em;
+    }
+    .tool-content {
+      padding: 0.5em;
+      border: 1px solid var(--primary-color);
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+      margin-bottom: 0.5em;
+    }
+    
+    /* Input Grouping */
+    .inline-group {
+      display: flex;
+      align-items: center;
+      gap: 1em;
+      margin-bottom: 0.5em;
+    }
+    .inline-group label {
+      width: auto;
+    }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 1em;
+      margin-bottom: 0.5em;
+    }
+    .checkbox-group input[type="checkbox"] {
+      transform: scale(1.2);
+      margin-right: 0.3em;
+    }
+    
+    /* Text Tool Specific Grouping */
+    .position-inputs {
+      display: flex;
+      gap: 1em;
+      margin-bottom: 0.5em;
+    }
+    
+    /* Slider Groups */
+    .slider-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      margin-bottom: 0.5em;
+    }
+    .slider-group input[type="range"] {
+      flex: 1;
+    }
+    
+    /* Copy Button */
+    .copy-btn {
+      background: var(--secondary-color);
+      color: var(--text-color);
+      border: none;
+      padding: 0.3em 0.6em;
+      font-size: 0.9rem;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-left: 0.5em;
+    }
+
+    /* Number and Text Inputs */
+    input[type="number"],
+    input[type="text"] {
+      width: 70px;
+      padding: 0.3em;
+      border: 1px solid var(--secondary-color);
+      border-radius: 3px;
+    }
+    input[type="file"] {
+      margin-bottom: 0.5em;
+    }
+    
+    button {
+      margin: 0.3em 0.3em 0.3em 0;
+      padding: 0.4em 0.8em;
+      border: none;
+      background: var(--primary-color);
+      color: var(--text-color);
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    button.active {
+      background: var(--secondary-color);
+    }
+    textarea {
+      width: 100%;
+      font-family: monospace;
+      margin-top: 0.5em;
+      resize: vertical;
+      padding: 0.5em;
+      border: 1px solid var(--secondary-color);
+      border-radius: 3px;
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+      .canvas-container, .controls-container {
+        flex: none;
+        width: 100%;
+      }
+      .hamburger {
+        display: block;
+      }
+      .main-nav {
+        display: none;
+        flex-direction: column;
+      }
+      .main-nav.active {
+        display: flex;
+      }
+      .header-content {
+        flex-direction: row;
+        justify-content: space-between;
+      }
+      .inline-group, .position-inputs, .checkbox-group {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="main-header">
+    <div class="header-content">
+      <a href="https://thinkingrobot.in/">
+        <img src="//thinkingrobot.in/wp-content/uploads/2025/01/Untitled-design-14.png" alt="TRC Logo" class="logo">
+    </a>
+      <button class="hamburger" onclick="toggleMenu()">☰</button>
+      <nav class="main-nav" id="navbar">
+        <a href="https://thinkingrobot.in/trc-tools/">Back to tools</a>
+        <a href="#">Features</a>
+        <a href="#">Explore</a>
+        <a href="#">About TRC Tools</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+      <!-- Canvas Section -->
+      <div class="canvas-container">
+        <canvas id="gridCanvas" width="800" height="600"></canvas>
+      </div>
+
+      <!-- Controls Section -->
+      <div class="controls-container">
+        <!-- Grid Settings Section -->
+        <details class="tool-section" open>
+          <summary>Grid Settings</summary>
+          <div class="tool-content">
+            <div class="inline-group">
+              <label for="gridWidth">Width:</label>
+              <input type="number" id="gridWidth" value="128" min="1">
+              <label for="gridHeight">Height:</label>
+              <input type="number" id="gridHeight" value="64" min="1">
+            </div>
+            <div class="inline-group">
+              <button id="createGridBtn">Create Grid</button>
+              <button id="fillGridBtn">Fill Grid</button>
+              <button id="clearGridBtn">Clear Grid</button>
+            </div>
+            <div class="inline-group">
+              <button id="saveGridBtn">Save Grid</button>
+              <button id="loadGridBtn">Load Grid</button>
+              <input type="file" id="loadGridFile" style="display:none;">
+            </div>
+          </div>
+        </details>
+
+        <!-- Drawing Tools Section -->
+        <details class="tool-section" open>
+          <summary>Drawing Tools</summary>
+          <div class="tool-content">
+            <div class="inline-group">
+              <button id="pencilBtn" class="active">Pencil</button>
+              <button id="eraserBtn">Eraser</button>
+            </div>
+          </div>
+        </details>
+
+        <!-- Text Tool Section -->
+        <details class="tool-section" open>
+          <summary>Text Tool</summary>
+          <div class="tool-content">
+            <div class="inline-group">
+              <label for="inputText">Text:</label>
+              <input type="text" id="inputText" value="Hello">
+              <label for="fontSize">Size:</label>
+              <input type="number" id="fontSize" value="10">
+            </div>
+            <div class="position-inputs">
+              <div class="inline-group">
+                <label for="textX">X:</label>
+                <input type="number" id="textX" value="0">
+              </div>
+              <div class="inline-group">
+                <label for="textY">Y:</label>
+                <input type="number" id="textY" value="0">
+              </div>
+            </div>
+            <div class="inline-group">
+              <button id="previewTextBtn">Preview Text</button>
+              <button id="stampTextBtn">Stamp Text</button>
+            </div>
+          </div>
+        </details>
+
+        <!-- Image Tool Section -->
+        <details class="tool-section" open>
+          <summary>Image Tool</summary>
+          <div class="tool-content">
+            <div class="inline-group">
+              <input type="file" id="imageInput" accept="image/*">
+            </div>
+            <div class="inline-group">
+              <label for="imgX">X:</label>
+              <input type="number" id="imgX" value="0">
+              <label for="imgY">Y:</label>
+              <input type="number" id="imgY" value="0">
+            </div>
+            <div class="slider-group">
+              <label for="imgZoom">Zoom:</label>
+              <!-- Extended zoom slider range: -1000 to 1000 -->
+              <input type="range" id="imgZoom" min="-1000" max="1000" value="0">
+              <span id="imgZoomVal">100%</span>
+            </div>
+            <div class="slider-group">
+              <label for="imgThreshold">Threshold:</label>
+              <input type="range" id="imgThreshold" min="0" max="255" value="128">
+              <span id="imgThresholdVal">128</span>
+            </div>
+            <div class="checkbox-group">
+              <div>
+                <input type="checkbox" id="invertPixels">
+                <label for="invertPixels">Invert Pixels</label>
+              </div>
+              <div>
+                <input type="checkbox" id="showImage" checked>
+                <label for="showImage">Show Image</label>
+              </div>
+            </div>
+            <div class="inline-group">
+              <button id="previewImageBtn">Preview Image</button>
+              <button id="stampImageBtn">Stamp Image</button>
+              <button id="removeImageBtn">Remove Image</button>
+            </div>
+          </div>
+        </details>
+
+        <!-- Generate Bitmap Code Section -->
+        <details class="tool-section" open>
+          <summary>Generate Code</summary>
+          <div class="tool-content">
+            <div class="inline-group">
+              <button id="generateBtn">Generate Bitmap Code</button>
+              <button id="copyBtn" class="copy-btn" title="Copy to clipboard">📋</button>
+            </div>
+            <textarea id="output" rows="10" readonly placeholder="Bitmap code will appear here"></textarea>
+          </div>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="main-footer">
+    <div class="footer-content">
+      &copy; 2024 TRC Tools. Designed with ❤️ for engineers.
+    </div>
+  </footer>
+
+  <script>
+    // Toggle Mobile Menu
+    function toggleMenu() {
+      var navbar = document.getElementById("navbar");
+      navbar.classList.toggle("active");
+    }
+
+    /* ========= Global Variables ========= */
+    let gridWidth = 128, gridHeight = 64;
+    let grid = [];
+    let drawMode = "pencil"; // "pencil" or "eraser"
+    let isMouseDown = false;
+    let previewText = null;   // { text, x, y, fontSize }
+    let previewImage = null;  // { img, x, y, scale, defaultScale }
+
+    const canvas = document.getElementById("gridCanvas");
+    const ctx = canvas.getContext("2d");
+
+    /* ========= Grid Initialization & Drawing ========= */
+    function initGrid() {
+      grid = [];
+      for (let y = 0; y < gridHeight; y++) {
+        const row = [];
+        for (let x = 0; x < gridWidth; x++) {
+          row.push(false);
+        }
+        grid.push(row);
+      }
+      drawGrid();
+    }
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const cellSize = Math.floor(Math.min(canvas.width / gridWidth, canvas.height / gridHeight));
+      const offsetX = Math.floor((canvas.width - gridWidth * cellSize) / 2);
+      const offsetY = Math.floor((canvas.height - gridHeight * cellSize) / 2);
+      for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+          ctx.fillStyle = grid[y][x] ? "#000" : "#fff";
+          ctx.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize, cellSize);
+        }
+      }
+      ctx.strokeStyle = "#ddd";
+      for (let x = 0; x <= gridWidth; x++) {
+        ctx.beginPath();
+        ctx.moveTo(offsetX + x * cellSize, offsetY);
+        ctx.lineTo(offsetX + x * cellSize, offsetY + gridHeight * cellSize);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= gridHeight; y++) {
+        ctx.beginPath();
+        ctx.moveTo(offsetX, offsetY + y * cellSize);
+        ctx.lineTo(offsetX + gridWidth * cellSize, offsetY + y * cellSize);
+        ctx.stroke();
+      }
+      if (previewText) {
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = "blue";
+        ctx.textBaseline = "top";
+        ctx.font = (previewText.fontSize * cellSize) + "px sans-serif";
+        ctx.fillText(previewText.text, offsetX + previewText.x * cellSize, offsetY + previewText.y * cellSize);
+        ctx.restore();
+      }
+      if (previewImage && previewImage.img && document.getElementById("showImage").checked) {
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.drawImage(
+          previewImage.img,
+          offsetX + previewImage.x * cellSize,
+          offsetY + previewImage.y * cellSize,
+          previewImage.img.width * previewImage.scale * cellSize,
+          previewImage.img.height * previewImage.scale * cellSize
+        );
+        ctx.restore();
+      }
+    }
+
+    /* ========= Mouse Event Helpers ========= */
+    function getCellFromEvent(event) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const clickX = (event.clientX - rect.left) * scaleX;
+      const clickY = (event.clientY - rect.top) * scaleY;
+      const cellSize = Math.floor(Math.min(canvas.width / gridWidth, canvas.height / gridHeight));
+      const offsetX = (canvas.width - gridWidth * cellSize) / 2;
+      const offsetY = (canvas.height - gridHeight * cellSize) / 2;
+      const gridX = Math.floor((clickX - offsetX) / cellSize);
+      const gridY = Math.floor((clickY - offsetY) / cellSize);
+      return { gridX, gridY };
+    }
+
+    function updateCellAt(event) {
+      const { gridX, gridY } = getCellFromEvent(event);
+      if (gridX >= 0 && gridX < gridWidth && gridY >= 0 && gridY < gridHeight) {
+        grid[gridY][gridX] = (drawMode === "pencil");
+        drawGrid();
+      }
+    }
+
+    canvas.addEventListener("mousedown", (event) => { isMouseDown = true; updateCellAt(event); });
+    canvas.addEventListener("mousemove", (event) => { if (isMouseDown) updateCellAt(event); });
+    canvas.addEventListener("mouseup", () => { isMouseDown = false; });
+    canvas.addEventListener("mouseleave", () => { isMouseDown = false; });
+
+    /* ===== Control Panel Listeners ===== */
+    document.getElementById("createGridBtn").addEventListener("click", () => {
+      gridWidth = parseInt(document.getElementById("gridWidth").value) || 128;
+      gridHeight = parseInt(document.getElementById("gridHeight").value) || 64;
+      previewText = null;
+      previewImage = null;
+      initGrid();
+    });
+    document.getElementById("fillGridBtn").addEventListener("click", () => {
+      for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+          grid[y][x] = true;
+        }
+      }
+      drawGrid();
+    });
+    document.getElementById("clearGridBtn").addEventListener("click", () => {
+      for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+          grid[y][x] = false;
+        }
+      }
+      drawGrid();
+    });
+
+    /* ===== Save & Load Grid ===== */
+    document.getElementById("saveGridBtn").addEventListener("click", () => {
+      const data = { gridWidth, gridHeight, grid };
+      const dataStr = JSON.stringify(data);
+      const blob = new Blob([dataStr], {type: "application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "gridState.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+    document.getElementById("loadGridBtn").addEventListener("click", () => {
+      document.getElementById("loadGridFile").click();
+    });
+    document.getElementById("loadGridFile").addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          gridWidth = data.gridWidth;
+          gridHeight = data.gridHeight;
+          grid = data.grid;
+          document.getElementById("gridWidth").value = gridWidth;
+          document.getElementById("gridHeight").value = gridHeight;
+          drawGrid();
+        } catch (err) {
+          alert("Error reading grid file.");
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    /* ===== Pencil & Eraser ===== */
+    document.getElementById("pencilBtn").addEventListener("click", () => {
+      drawMode = "pencil";
+      document.getElementById("pencilBtn").classList.add("active");
+      document.getElementById("eraserBtn").classList.remove("active");
+    });
+    document.getElementById("eraserBtn").addEventListener("click", () => {
+      drawMode = "eraser";
+      document.getElementById("eraserBtn").classList.add("active");
+      document.getElementById("pencilBtn").classList.remove("active");
+    });
+
+    /* ===== Text Tool ===== */
+    document.getElementById("previewTextBtn").addEventListener("click", () => {
+      previewText = {
+        text: document.getElementById("inputText").value,
+        x: parseInt(document.getElementById("textX").value) || 0,
+        y: parseInt(document.getElementById("textY").value) || 0,
+        fontSize: parseInt(document.getElementById("fontSize").value) || 10
+      };
+      drawGrid();
+    });
+    function updateTextPreview() {
+      if (previewText) {
+        previewText.text = document.getElementById("inputText").value;
+        previewText.x = parseInt(document.getElementById("textX").value) || 0;
+        previewText.y = parseInt(document.getElementById("textY").value) || 0;
+        previewText.fontSize = parseInt(document.getElementById("fontSize").value) || 10;
+        drawGrid();
+      }
+    }
+    document.getElementById("inputText").addEventListener("input", updateTextPreview);
+    document.getElementById("textX").addEventListener("input", updateTextPreview);
+    document.getElementById("textY").addEventListener("input", updateTextPreview);
+    document.getElementById("fontSize").addEventListener("input", updateTextPreview);
+    document.getElementById("stampTextBtn").addEventListener("click", () => {
+      const offscreen = document.createElement("canvas");
+      offscreen.width = gridWidth;
+      offscreen.height = gridHeight;
+      const offCtx = offscreen.getContext("2d");
+      offCtx.textBaseline = "top";
+      offCtx.font = document.getElementById("fontSize").value + "px sans-serif";
+      offCtx.fillStyle = "#000";
+      offCtx.fillText(
+        document.getElementById("inputText").value,
+        parseInt(document.getElementById("textX").value) || 0,
+        parseInt(document.getElementById("textY").value) || 0
+      );
+      const imageData = offCtx.getImageData(0, 0, gridWidth, gridHeight);
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        if (imageData.data[i + 3] > 128) {
+          const pixelIndex = i / 4;
+          const col = pixelIndex % gridWidth;
+          const row = Math.floor(pixelIndex / gridWidth);
+          grid[row][col] = true;
+        }
+      }
+      previewText = null;
+      drawGrid();
+    });
+
+    /* ===== Image Tool ===== */
+    // Our new mapping: when an image is loaded, compute a default scale so that the image fits inside the grid.
+    // The grid’s dimensions in canvas pixels are: gridWidth * cellSize and gridHeight * cellSize.
+    // Compute cellSize as used in drawGrid:
+    function computeCellSize() {
+      return Math.floor(Math.min(canvas.width / gridWidth, canvas.height / gridHeight));
+    }
+    // When the image is loaded, we set previewImage.defaultScale so that the image fits in the grid.
+    document.getElementById("previewImageBtn").addEventListener("click", () => {
+      const fileInput = document.getElementById("imageInput");
+      if (fileInput.files.length === 0) {
+        alert("Please select an image file.");
+        return;
+      }
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const cellSize = computeCellSize();
+          // Total grid width/height in canvas pixels:
+          const gridCanvasWidth = gridWidth * cellSize;
+          const gridCanvasHeight = gridHeight * cellSize;
+          // Compute default scale so that image fits within the grid (with 90% margin)
+          const defaultScale = Math.min((gridCanvasWidth * 0.9) / img.width, (gridCanvasHeight * 0.9) / img.height);
+          // Set slider to 0 (which corresponds to factor 1)
+          document.getElementById("imgZoom").value = 0;
+          document.getElementById("imgZoomVal").innerText = Math.round(defaultScale * 100) + "%";
+          previewImage = {
+            img: img,
+            x: parseInt(document.getElementById("imgX").value) || 0,
+            y: parseInt(document.getElementById("imgY").value) || 0,
+            defaultScale: defaultScale,
+            scale: defaultScale
+          };
+          drawGrid();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+    // Compute zoom factor from slider value.  
+    // Here, slider ranges from -1000 to 1000, and factor = 1 + (slider/1000)*X.
+    // For zooming in, let X = 5 so that at +1000 the factor is 6.
+    // For zooming out, let X = 0.95 so that at -1000 the factor is 0.05.
+    function computeZoomFactor(zoomVal) {
+      zoomVal = parseFloat(zoomVal);
+      if (zoomVal >= 0) {
+        return 1 + (zoomVal / 1000) * 5;
+      } else {
+        return 1 + (zoomVal / 1000) * 0.95;
+      }
+    }
+    function updateImagePreview() {
+      if (previewImage) {
+        previewImage.x = parseInt(document.getElementById("imgX").value) || 0;
+        previewImage.y = parseInt(document.getElementById("imgY").value) || 0;
+        const zoomVal = document.getElementById("imgZoom").value;
+        const factor = computeZoomFactor(zoomVal);
+        previewImage.scale = previewImage.defaultScale * factor;
+        document.getElementById("imgZoomVal").innerText = Math.round(previewImage.scale * 100) + "%";
+        drawGrid();
+      }
+    }
+    document.getElementById("imgX").addEventListener("input", updateImagePreview);
+    document.getElementById("imgY").addEventListener("input", updateImagePreview);
+    document.getElementById("imgZoom").addEventListener("input", updateImagePreview);
+    document.getElementById("imgThreshold").addEventListener("input", () => {
+      document.getElementById("imgThresholdVal").innerText = document.getElementById("imgThreshold").value;
+    });
+    document.getElementById("showImage").addEventListener("change", drawGrid);
+    
+    // When stamping the image, use the same coordinate mapping as the preview.
+    document.getElementById("stampImageBtn").addEventListener("click", () => {
+      if (!previewImage || !previewImage.img) {
+        alert("No image preview available. Please preview an image first.");
+        return;
+      }
+      const cellSize = computeCellSize();
+      const offsetX = Math.floor((canvas.width - gridWidth * cellSize) / 2);
+      const offsetY = Math.floor((canvas.height - gridHeight * cellSize) / 2);
+      const threshold = parseInt(document.getElementById("imgThreshold").value) || 128;
+      const invert = document.getElementById("invertPixels").checked;
+      // The drawn image’s top–left on canvas:
+      const drawnImageX = offsetX + previewImage.x * cellSize;
+      const drawnImageY = offsetY + previewImage.y * cellSize;
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = previewImage.img.width;
+      tempCanvas.height = previewImage.img.height;
+      const tempCtx = tempCanvas.getContext("2d");
+      tempCtx.drawImage(previewImage.img, 0, 0);
+      const imageData = tempCtx.getImageData(0, 0, previewImage.img.width, previewImage.img.height);
+      const data = imageData.data;
+      for (let row = 0; row < gridHeight; row++) {
+        for (let col = 0; col < gridWidth; col++) {
+          const cellCanvasX = offsetX + col * cellSize;
+          const cellCanvasY = offsetY + row * cellSize;
+          const relX = cellCanvasX - drawnImageX;
+          const relY = cellCanvasY - drawnImageY;
+          const imageCoordX = Math.floor(relX / (previewImage.scale * cellSize));
+          const imageCoordY = Math.floor(relY / (previewImage.scale * cellSize));
+          if (imageCoordX >= 0 && imageCoordX < previewImage.img.width &&
+              imageCoordY >= 0 && imageCoordY < previewImage.img.height) {
+            const idx = (imageCoordY * previewImage.img.width + imageCoordX) * 4;
+            const brightness = 0.34 * data[idx] + 0.5 * data[idx + 1] + 0.16 * data[idx + 2];
+            let bit = brightness < threshold;
+            if (invert) bit = !bit;
+            grid[row][col] = bit;
+          }
+        }
+      }
+      // The preview image remains (do not remove).
+      drawGrid();
+    });
+    document.getElementById("removeImageBtn").addEventListener("click", () => {
+      previewImage = null;
+      drawGrid();
+    });
+
+    /* ===== Generate Bitmap Code ===== */
+    document.getElementById("generateBtn").addEventListener("click", () => {
+      let code = "const uint8_t PROGMEM bitmap[] = {\n";
+      for (let y = 0; y < gridHeight; y++) {
+        let rowCode = "  ";
+        const bytesInRow = Math.ceil(gridWidth / 8);
+        for (let byteIndex = 0; byteIndex < bytesInRow; byteIndex++) {
+          let byteValue = 0;
+          for (let bit = 0; bit < 8; bit++) {
+            const x = byteIndex * 8 + bit;
+            if (x < gridWidth && grid[y][x]) {
+              byteValue |= (1 << (7 - bit));
+            }
+          }
+          rowCode += "0b" + byteValue.toString(2).padStart(8, "0");
+          if (byteIndex < bytesInRow - 1) rowCode += ", ";
+        }
+        rowCode += (y < gridHeight - 1) ? ",\n" : "\n";
+        code += rowCode;
+      }
+      code += "};";
+      document.getElementById("output").value = code;
+    });
+    document.getElementById("copyBtn").addEventListener("click", () => {
+      const outputEl = document.getElementById("output");
+      outputEl.select();
+      document.execCommand("copy");
+      alert("Bitmap code copied to clipboard!");
+    });
+
+    /* ========= Initialize ========= */
+    initGrid();
+  </script>
+</body>
+</html>
